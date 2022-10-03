@@ -36,6 +36,13 @@ public class HanoTalkClientLogin extends JFrame{
 	private String PortNumber = "30000";
 	
 	private static final int BUF_LEN = 128; // Windows 처럼 BUF_LEN 을 정의
+	private Socket socket; // 연결소켓
+	private InputStream is;
+	private OutputStream os;
+	private DataInputStream dis;
+	private DataOutputStream dos;
+	private ObjectInputStream ois;
+	private ObjectOutputStream oos;
 	
 	ImageIcon icon = new ImageIcon("./Image_Folder/login.png");
 	Image img = icon.getImage();
@@ -74,16 +81,16 @@ public class HanoTalkClientLogin extends JFrame{
 		contentPane.add(txtUserName);
 		txtUserName.setColumns(10);
 		
-		//JLabel lblPassWord = new JLabel("Password");
-		//lblPassWord.setBounds(25, 140, 82, 33);
-		//contentPane.add(lblPassWord);
+		JLabel lblPassWord = new JLabel("Password");
+		lblPassWord.setBounds(25, 140, 82, 33);
+		contentPane.add(lblPassWord);
 		
-		//txtPassWord = new JTextField();
-		//txtPassWord.setHorizontalAlignment(SwingConstants.CENTER);
+		txtPassWord = new JTextField();
+		txtPassWord.setHorizontalAlignment(SwingConstants.CENTER);
 		//txtPassWord.setText("127.0.0.1");
-		//txtPassWord.setColumns(10);
-		//txtPassWord.setBounds(110, 140, 116, 33);
-		//contentPane.add(txtPassWord);
+		txtPassWord.setColumns(10);
+		txtPassWord.setBounds(110, 140, 116, 33);
+		contentPane.add(txtPassWord);
 		
 		/*JLabel lblPortNumber = new JLabel("Port Number");
 		lblPortNumber.setBounds(20, 163, 82, 33);
@@ -107,7 +114,7 @@ public class HanoTalkClientLogin extends JFrame{
 		Myaction action = new Myaction();
 		btnConnect.addActionListener(action);
 		txtUserName.addActionListener(action);
-		//txtPassWord.addActionListener(action);
+		txtPassWord.addActionListener(action);
 		//txtPortNumber.addActionListener(action);
 		
 	}
@@ -117,7 +124,7 @@ public class HanoTalkClientLogin extends JFrame{
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			String id = txtUserName.getText().trim();
-			//String pw = txtPassWord.getText().trim();
+			String pw = txtPassWord.getText().trim();
 			//SendMessage(id, pw);
 			
 			//String login = readMessage();//코드 받아오기
@@ -140,5 +147,50 @@ public class HanoTalkClientLogin extends JFrame{
 			setVisible(false);
 		}
 	}
-	
+	public void SendMessage(String id, String pw) {
+		try {
+			// dos.writeUTF(msg);
+//			byte[] bb;
+//			bb = MakePacket(msg);
+//			dos.write(bb, 0, bb.length);
+			ChatMsg obcm = new ChatMsg(id, "100", pw);
+			oos.writeObject(obcm);
+		} catch (IOException e) {
+			// AppendText("dos.write() error");
+			//AppendText("oos.writeObject() error");
+			showMessageDialog(null, "oos.writeObject() error");
+			try {
+//				dos.close();
+//				dis.close();
+				ois.close();
+				oos.close();
+				socket.close();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				System.exit(0);
+			}
+		}
+	}
+	public String readMessage() {
+		Object obcm = null;
+		String msg = null;
+		ChatMsg cm = null;
+		
+		try {
+			try {
+				obcm = ois.readObject();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (obcm instanceof ChatMsg) {
+			cm = (ChatMsg) obcm;
+		}
+		return cm.code;
+	}
 }

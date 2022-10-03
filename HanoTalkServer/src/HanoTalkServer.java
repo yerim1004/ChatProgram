@@ -6,6 +6,9 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+
+//import HanoTalkClientMain.ListenNetwork;
+
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
@@ -23,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Vector;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingConstants;
@@ -41,7 +45,7 @@ public class HanoTalkServer extends JFrame {
 	private Socket client_socket; // accept() 에서 생성된 client 소켓
 	private Vector UserVec = new Vector(); // 연결된 사용자를 저장할 벡터
 	private static final int BUF_LEN = 128; // Windows 처럼 BUF_LEN 을 정의
-	public ArrayList<String> MemberList = new ArrayList<String>();
+	public static ArrayList<ChatMember> MemberList = new ArrayList<>();
 	
 	private Vector<Room> RoomList = new Vector<>();//룸 관리 리스트
 	private Room room;
@@ -55,6 +59,31 @@ public class HanoTalkServer extends JFrame {
 			public void run() {
 				try {
 					HanoTalkServer frame = new HanoTalkServer();
+					ChatMember m = new ChatMember();
+					ChatMember m2 = new ChatMember();
+					ChatMember m3 = new ChatMember();
+					
+					m.mName = new JLabel("user1");
+					m.stat = new JLabel("o");
+					m.profile = new JButton("m");
+					MemberList.add(m);
+					
+					m2.mName = new JLabel("user2");
+					m2.stat = new JLabel("o");
+					m2.profile = new JButton("m2");
+					MemberList.add(m2);
+					
+					m3.profile = new JButton("m3");
+					m3.mName = new JLabel("user3");
+					
+					m3.stat = new JLabel("o");
+					MemberList.add(m3);
+					
+					//초기유저셋
+					
+					System.out.println(MemberList.get(0).mName.getText());
+					System.out.println(MemberList.get(1).mName.getText());
+					System.out.println(MemberList.get(2).mName.getText());
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -113,6 +142,8 @@ public class HanoTalkServer extends JFrame {
 		});
 		btnServerStart.setBounds(12, 356, 300, 35);
 		contentPane.add(btnServerStart);
+		
+		
 	}
 
 	// 새로운 참가자 accept() 하고 user thread를 새로 생성한다.
@@ -129,6 +160,8 @@ public class HanoTalkServer extends JFrame {
 					UserVec.add(new_user); // 새로운 참가자 배열에 추가
 					new_user.start(); // 만든 객체의 스레드 실행
 					AppendText("현재 참가자 수 " + UserVec.size());
+					
+					
 				} catch (IOException e) {
 					AppendText("accept() error");
 					// System.exit(0);
@@ -167,17 +200,15 @@ public class HanoTalkServer extends JFrame {
 		public String UserName = "";
 		public String UserStatus;
 		//private ArrayList<String> member;
+		private Vector<Room> roomlist;
 
 		public UserService(Socket client_socket) {
 			// TODO Auto-generated constructor stub
 			// 매개변수로 넘어온 자료 저장
 			this.client_socket = client_socket;
 			this.user_vc = UserVec;
+			this.roomlist = RoomList;
 			try {
-//				is = client_socket.getInputStream();
-//				dis = new DataInputStream(is);
-//				os = client_socket.getOutputStream();
-//				dos = new DataOutputStream(os);
 
 				oos = new ObjectOutputStream(client_socket.getOutputStream());
 				oos.flush();
@@ -216,7 +247,7 @@ public class HanoTalkServer extends JFrame {
 		}
 		public void Online() {
 			AppendText(UserName + "님이 접속하셨습니다.");
-			MemberList.add(UserName);
+			//MemberList.add(UserName);
 			SendUserList();
 		}
 		public void Offline() {
@@ -245,15 +276,16 @@ public class HanoTalkServer extends JFrame {
 			for (int i = 0; i < user_vc.size(); i++) {
 				UserService user = (UserService) user_vc.elementAt(i);
 				if (user != this && user.UserStatus == "O")
-					user.WriteOne(str);
+					user.WriteOne(str); 
 			}
 		}
 		public void SendUserList() {
 			ChatMsg chatob = new ChatMsg(UserName, "111", "list");//접속한 유저리스트 전송
 			chatob.friendlist = MemberList;
 			//chatob.setRoom(null);
-			for(int i=0; i<chatob.friendlist.size(); i++) {
-				AppendText("list index:" + i + "->" + chatob.friendlist.get(i));
+			
+			for(int i=0; i<3; i++) {
+				AppendText("list index:" + i + "->" + chatob.friendlist.get(i).mName.getText());
 			}
 			WriteAllObject(chatob);
 		}
@@ -279,7 +311,6 @@ public class HanoTalkServer extends JFrame {
 		// UserService Thread가 담당하는 Client 에게 1:1 전송
 		public void WriteOne(String msg) {
 			try {
-				
 				ChatMsg obcm = new ChatMsg("SERVER", "200", msg);
 				oos.writeObject(obcm);
 				oos.reset();
@@ -344,8 +375,24 @@ public class HanoTalkServer extends JFrame {
 				Logout();
 			}
 		}
-		public void makeRoomList(ArrayList<String> chatlist) {
+		public Room makeRoomList(ArrayList<ChatMember> chatlist) {
 			//랜덤으로 숫자 생성 -> 룸 아이디로 지정 -> 룸 아이디랑 챗리스트 룸 생성자 만들어서 설정 -> 룸 리스트 벡터에 추가
+			String rid;
+			Random random = new Random();
+			random.setSeed(System.currentTimeMillis());
+			rid = Integer.toString(random.nextInt(100) + 100);//100~199
+			
+			for(int i=0; i < roomlist.size(); i++) {//id중복계산
+				Room r = (Room) roomlist.elementAt(i);
+				if(rid.matches(r.roomid)) {
+					rid = Integer.toString(random.nextInt(100) + 100);
+					i = 0; continue;
+				}
+			}
+			Room room = new Room(rid, chatlist);
+			RoomList.add(room);
+			
+			return room;
 		}
 		
 		public void run() {
@@ -400,14 +447,26 @@ public class HanoTalkServer extends JFrame {
 						}*/
 						//접속한 유저 목록 전송하기
 						UserName = cm.UserName;
-						//Login();
 						
 						Login();
 						
-					}else if(cm.code.matches("130")) {//룸 생성 코드
+					}else if(cm.code.matches("150")) {//룸 생성 코드
+						//1.문자열 리스트 만들어서 makeRoomList() 실행
+						ArrayList<ChatMember> r = new ArrayList<>();
+						r = cm.chatlist;
+						Room makeroom = makeRoomList(r); //생성된 room 리턴
 						
-					
-					
+						for (int j = 0; j < r.size(); j++) {
+							for(int i = 0; i < user_vc.size(); i++) {
+								UserService user = (UserService) user_vc.elementAt(i);
+								if(user.UserName.equals(r.get(j))) {
+									ChatMsg ob = new ChatMsg(UserName, "151", "make room");
+									ob.chatlist = r;
+									ob.room = makeroom;
+									user.WriteOneObject(ob);
+								}
+							}
+						}
 					}/*else if(cm.code.matches("600")) {//회원가입 코드
 						for (int i=0; i<member.size();i++) {
 							if(!cm.UserName.matches(member.get(i).id)) {//같은 아이디가 없으면
@@ -425,7 +484,10 @@ public class HanoTalkServer extends JFrame {
 						msg = String.format("[%s] %s", cm.UserName, cm.data);
 						AppendText(msg); // server 화면에 출력
 						String[] args = msg.split(" "); // 단어들을 분리한다.
-						if (args.length == 1) { // Enter key 만 들어온 경우 Wakeup 처리만 한다.
+						String r_num = cm.room.roomid;
+						
+						WriteAllObject(cm);
+						/*if (args.length == 1) { // Enter key 만 들어온 경우 Wakeup 처리만 한다.
 							UserStatus = "O";
 						} else if (args[1].matches("/exit")) {
 							Logout();
@@ -463,7 +525,8 @@ public class HanoTalkServer extends JFrame {
 							UserStatus = "O";
 							//WriteAll(msg + "\n"); // Write All
 							WriteAllObject(cm);
-						}
+						}*/
+						
 					} else if (cm.code.matches("400")) { // logout message 처리
 						Logout();
 						break;
