@@ -27,7 +27,7 @@ __채팅창 사용 이미지입니다__
 저는 서버와 클라이언트 공통적인 ChatMember, ChatMsg를 작성했습니다.<br>
 HanoTalkServer와 Room에서는 전반적인 채팅방 운영과 전송되는 스트림을 관리했습니다.<br>
 HanoTalkClientLogin과 HanoTalkClientMain에서는 사용자의 프로필, 오프라인 유무 관리와 채팅방 생성, 관리했습니다.
-
+<br><br>
 개발하면서 가장 어려웠던 점은 각 사용자가 생성한 Room의 정보를 클라이언트와 서버가 온전히 같은 정보를 갖고 있어야한다는 점이었고,<br>
 이를 위해 채팅방의 정보를 Vector로 전달하는 과정에서 오류가 발생했습니다.<br>
 오류를 해결하기 위해서 Vector를 List로 바꾸어 보는 등의 시도를 했고,
